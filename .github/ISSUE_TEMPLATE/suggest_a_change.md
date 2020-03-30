@@ -3,7 +3,7 @@ name: Suggest a Change
 about: Suggest an enhancement to help us improve
 title: ''
 labels: ''
-assignees: anton-yurchenko
+assignees: ''
 
 ---
 
