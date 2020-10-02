@@ -47,7 +47,8 @@ func (r *Repository) ReadTag(version *string, allowPrefix bool) error {
 	regex := regexp.MustCompile(expression)
 
 	if regex.MatchString(o) {
-		r.Tag = strings.Split(o, "/")[2]
+		refs := strings.Split(o, "/")
+		r.Tag = strings.Join(refs[2:], "/")
 
 		if allowPrefix {
 			*version = regex.ReplaceAllString(o, "${2}.${3}.${4}${5}${6}${7}${8}")
@@ -79,7 +80,7 @@ func (r *Repository) ReadProjectName() error {
 		return errors.New("env.var 'GITHUB_REPOSITORY' is empty or not defined")
 	}
 
-	expression := "^(?P<owner>[\\w,\\-,\\_]+)/(?P<repo>[\\w,\\-,\\_]+)$"
+	expression := "^(?P<owner>[\\w,\\-,\\_\\.]+)\\/(?P<repo>[\\w\\,\\-\\_\\.]+)$"
 	regex := regexp.MustCompile(expression)
 
 	if regex.MatchString(o) {

@@ -10,7 +10,7 @@ import (
 	"github.com/anton-yurchenko/git-release/internal/pkg/release"
 	"github.com/anton-yurchenko/git-release/internal/pkg/repository"
 	"github.com/anton-yurchenko/git-release/pkg/changelog"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -20,6 +20,7 @@ import (
 // Configuration is a git-release settings struct
 type Configuration struct {
 	AllowEmptyChangelog bool
+	IgnoreChangelog     bool
 	AllowTagPrefix      bool
 	ReleaseName         string
 	ReleaseNamePrefix   string
@@ -89,22 +90,27 @@ func GetConfig(release release.Interface, changes changelog.Interface, fs afero.
 	}
 
 	c := os.Getenv("CHANGELOG_FILE")
-	if c == "" {
+	if c == "none" {
+		log.Warn("'CHANGELOG_FILE' is set to 'none'")
+		conf.IgnoreChangelog = true
+	} else if c == "" {
 		log.Warn("'CHANGELOG_FILE' is not defined, assuming 'CHANGELOG.md'")
 		c = "CHANGELOG.md"
 	}
 
-	changes.SetFile(fmt.Sprintf("%v/%v", dir, c))
-	b, err := IsExists(changes.GetFile(), fs)
-	if err != nil {
-		log.Fatal(err)
+	if !conf.IgnoreChangelog {
+		changes.SetFile(fmt.Sprintf("%v/%v", dir, c))
+		b, err := IsExists(changes.GetFile(), fs)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if !b {
+			log.Fatalf("changelog file '%v' not found!", changes.GetFile())
+		}
 	}
 
-	if !b {
-		log.Fatalf("changelog file '%v' not found!", changes.GetFile())
-	}
-
-	release.SetAssets(GetAssets(dir, fs, args))
+	release.SetAssets(GetAssets(fs, args))
 
 	return conf, token, nil
 }
@@ -193,7 +199,7 @@ func (c *Configuration) Publish(repo repository.Interface, release release.Inter
 	}
 
 	if failure {
-		log.Fatal("error uploading assets (release partly published)")
+		log.Fatal("error uploading assets (release partially published)")
 	}
 
 	return nil

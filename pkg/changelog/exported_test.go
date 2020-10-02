@@ -1,7 +1,6 @@
 package changelog_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/anton-yurchenko/git-release/pkg/changelog"
@@ -9,81 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReadChanges(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	file := createChangelog(fs, t)
-
-	suite := map[string][]map[string]string{
-		"pass": []map[string]string{
-			map[string]string{
-				"version":  "1.0.0",
-				"expected": `- First stable release.`,
-			},
-			map[string]string{
-				"version": "1.0.1-beta",
-				"expected": `### Added
-- New feature.
-
-### Fixed
-- Fixed env.var bug.`,
-			},
-		},
-		"fail": []map[string]string{
-			map[string]string{
-				"version":  "99.0.0",
-				"expected": ``,
-			},
-		},
-	}
-
-	for _, test := range suite["pass"] {
-		assert := assert.New(t)
-
-		m := changelog.Changes{
-			File:    file,
-			Version: test["version"],
-			Body:    "",
-		}
-
-		err := m.ReadChanges(fs)
-
-		assert.Equal(nil, err)
-		assert.Equal(test["expected"], m.Body)
-	}
-
-	for _, test := range suite["fail"] {
-		assert := assert.New(t)
-
-		m := changelog.Changes{
-			File:    file,
-			Version: test["version"],
-			Body:    "",
-		}
-
-		err := m.ReadChanges(fs)
-
-		assert.EqualError(err, fmt.Sprintf("empty changelog for requested version: '%v'", test["version"]))
-		assert.Equal(test["expected"], m.Body)
-	}
-
-	// in order to cover 100%, interface should have a private 'Read' method
-	// i prefer to keep 'return err' uncovered.
-	// TEST: err
-	// assert := assert.New(t)
-	// fs = afero.NewMemMapFs()
-	// file = createChangelog(fs, t)
-
-	// m := new(mocks.Changelog)
-
-	// m.On("Read", fs).Return([]string{file}, errors.New("failure")).Once()
-
-	// err := m.ReadChanges(fs)
-
-	// assert.EqualError(err, "failure")
-}
-
 func TestSetFile(t *testing.T) {
 	assert := assert.New(t)
+	t.Log("Test Case 1/1 - Functionality")
 
 	m := new(changelog.Changes)
 	expected := "/home/user/file"
@@ -94,6 +21,7 @@ func TestSetFile(t *testing.T) {
 
 func TestGetFile(t *testing.T) {
 	assert := assert.New(t)
+	t.Log("Test Case 1/1 - Functionality")
 
 	m := new(changelog.Changes)
 	expected := "/home/user/file"
@@ -104,6 +32,7 @@ func TestGetFile(t *testing.T) {
 
 func TestGetBody(t *testing.T) {
 	assert := assert.New(t)
+	t.Log("Test Case 1/1 - Functionality")
 
 	expected := `### Added
 - Feature A
@@ -123,4 +52,104 @@ func TestGetBody(t *testing.T) {
 	}
 
 	assert.Equal(expected, m.GetBody())
+}
+
+func TestReadChanges(t *testing.T) {
+	assert := assert.New(t)
+	fs := afero.NewMemMapFs()
+
+	content := `## [1.0.3] - 2014-08-09
+### Added
+- Feature
+
+### Changed
+- Behavior
+
+## [1.0.2] - 2014-07-10
+### Changed
+- Behavior
+
+## [1.0.1] - 2014-05-31
+### Fixed
+- Bug
+
+[Unreleased]: https://github.com/anton-yurchenko/git-release/compare/v1.0.0...HEAD
+[0.9.0]: https://github.com/anton-yurchenko/git-release/compare/v0.9.0...v0.8.3
+[0.8.3]: https://github.com/anton-yurchenko/git-release/compare/v0.8.3...v0.8.2
+`
+
+	err := afero.WriteFile(fs, "CHANGELOG.md", []byte(content), 0644)
+	assert.Equal(nil, err, "preparation: error creating test file 'CHANGELOG.md'")
+
+	type test struct {
+		Changes        changelog.Changes
+		ExpectedError  string
+		ExpectedResult string
+	}
+
+	suite := map[string]test{
+		"Functionality 1": {
+			Changes: changelog.Changes{
+				File:    "CHANGELOG.md",
+				Version: "1.0.3",
+			},
+			ExpectedError: "",
+			ExpectedResult: `### Added
+- Feature
+
+### Changed
+- Behavior`,
+		},
+		"Functionality 2": {
+			Changes: changelog.Changes{
+				File:    "CHANGELOG.md",
+				Version: "1.0.2",
+			},
+			ExpectedError: "",
+			ExpectedResult: `### Changed
+- Behavior`,
+		},
+		"Functionality 3": {
+			Changes: changelog.Changes{
+				File:    "CHANGELOG.md",
+				Version: "1.0.1",
+			},
+			ExpectedError: "",
+			ExpectedResult: `### Fixed
+- Bug`,
+		},
+		"Non Existing Version": {
+			Changes: changelog.Changes{
+				File:    "CHANGELOG.md",
+				Version: "2.0.0",
+			},
+			ExpectedError:  "",
+			ExpectedResult: "",
+		},
+		"Ignore Unreleased Versions": {
+			Changes: changelog.Changes{
+				File:    "CHANGELOG.md",
+				Version: "0.9.0",
+			},
+			ExpectedError:  "",
+			ExpectedResult: "",
+		},
+	}
+
+	var counter int
+	for name, test := range suite {
+		counter++
+		t.Logf("Test Case %v/%v - %s", counter, len(suite), name)
+
+		err := test.Changes.ReadChanges(fs)
+
+		if test.ExpectedError != "" {
+			assert.EqualError(err, test.ExpectedError)
+		} else {
+			assert.Equal(nil, err)
+
+			assert.Equal(test.ExpectedResult, test.Changes.Body)
+		}
+	}
+
 }

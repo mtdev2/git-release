@@ -12,6 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Version of an application
+const Version string = "3.4.1"
+
 func init() {
 	log.SetReportCaller(false)
 	log.SetFormatter(&log.TextFormatter{
@@ -22,6 +25,8 @@ func init() {
 	})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
+
+	log.Info("version: ", Version)
 }
 
 func main() {
@@ -41,8 +46,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = conf.GetReleaseBody(release.Changes, fs); err != nil {
-		log.Fatal(err)
+	if !conf.IgnoreChangelog {
+		if err = conf.GetReleaseBody(release.Changes, fs); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if err = conf.Publish(repo, release, cli.Repositories); err != nil {

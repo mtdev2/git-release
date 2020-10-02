@@ -1,3 +1,41 @@
+## [3.4.1] - 2020-08-31
+### Changed
+- Update Dependencies
+
+## [3.4.0] - 2020-07-10
+### Added
+- Glob pattern support
+- Unit Tests
+- Log version
+
+### Fixed
+- Exception on margins larger than context of changelog
+- Nil pointer exception in 'release' package
+
+### Changed
+- Refactor JavaScript wrapper
+
+## [3.3.0] - 2020-06-27
+### Added
+- Wrapper script: allow execution on Windows runners
+
+### Changed
+- Action execution through Git: from Docker to NodeJS
+
+## [3.2.0] - 2020-06-04
+### Fixed
+- Ignored `ALLOW_EMPTY_CHANGELOG=true` failed to create a release.
+
+### Added
+- `CHANGELOG_FILE=none` will skip changelog file validation. This allows to create a release from empty workspace.
+- Upgrade GoLang to 1.14.4
+- Upgrade dependencies
+
+## [3.1.2] - 2020-04-10
+### Fixed
+- [Issue #16](https://github.com/anton-yurchenko/git-release/issues/16) - Error parsing tags with slashes. (*Thanks to [Jonathan Hilgart](https://github.com/jonhilgart22)*)
+- Support `.` in organization and repository names.
+
 ## [3.1.1] - 2020-03-25
 ### Fixed
 - [Issue #14](https://github.com/anton-yurchenko/git-release/issues/14) - Ignored first release link in a comment. (*Thanks to [Luiz Ferraz](https://github.com/Fryuni)*)

@@ -1,23 +1,21 @@
-name: tests
+name: pull-request
 on:
   pull_request:
     branches:
       - master
-      - dev
 
 jobs:
-  lint:
-    name: Linter
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Init
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
-          go-version: 1.13
-        id: go
+          go-version: 1.15
 
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Dependencies
         run: |
@@ -30,29 +28,9 @@ jobs:
       - name: Lint
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
-          go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-          golangci-lint run ./...
-
-  test:
-    name: Unit Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Init
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-        id: go
-
-      - name: Checkout
-        uses: actions/checkout@v1
-
-      - name: Install Dependencies
-        run: |
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
+          curl -s https://api.github.com/repos/golangci/golangci-lint/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d : -f 2,3 | tr -d \" | wget -i -
+          tar -xvf golangci-lint-*-linux-amd64.tar.gz --strip=1 --no-anchored golangci-lint
+          ./golangci-lint run ./...
 
       - name: Test
         run: go test $(go list ./... | grep -v vendor | grep -v mocks) -race -coverprofile=coverage.txt -covermode=atomic
@@ -65,3 +43,26 @@ jobs:
           flags: tests
           name: pull-request
           fail_ci_if_error: true
+
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - run: git checkout HEAD^2
+        if: ${{ github.event_name == 'pull_request' }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: go
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v1
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

@@ -9,7 +9,7 @@ import (
 	"github.com/anton-yurchenko/git-release/internal/pkg/asset"
 	"github.com/anton-yurchenko/git-release/internal/pkg/repository"
 	"github.com/anton-yurchenko/git-release/mocks"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +17,7 @@ import (
 
 func TestSetName(t *testing.T) {
 	assert := assert.New(t)
+	t.Log("Test Case 1/1 - Functionality")
 
 	m := new(asset.Asset)
 	expected := "value"
@@ -27,6 +28,7 @@ func TestSetName(t *testing.T) {
 
 func TestSetPath(t *testing.T) {
 	assert := assert.New(t)
+	t.Log("Test Case 1/1 - Functionality")
 
 	m := new(asset.Asset)
 	expected := "value"
@@ -42,6 +44,8 @@ func TestUpload(t *testing.T) {
 	var id int64
 
 	// TEST: successful upload
+	t.Log("Test Case 1/2 - Functionality")
+
 	m := asset.Asset{
 		Name: "file1",
 		Path: "asset_test.go",
@@ -65,6 +69,8 @@ func TestUpload(t *testing.T) {
 	assert.Equal(nil, err)
 
 	// TEST: failed upload
+	t.Log("Test Case 2/2 - Failed Upload")
+
 	m = asset.Asset{
 		Name: "file1",
 		Path: "asset_test.go",
